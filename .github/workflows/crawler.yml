@@ -29,6 +29,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           latestVersion=$(gh release view --repo ${{ github.repository }} --json name | jq .name)
+          echo "Current latest: $latestVersion"
           if [[ "$latestVersion" == "${{ steps.version.outputs.latestVersion }}" ]];then
               echo "We're already at the latest version. No need to download at all"
               echo "SHOULD_RUN=false" >> "$GIHTUB_ENV"
@@ -36,10 +37,9 @@ jobs:
           fi
 
           echo "SHOULD_RUN=true" >> "$GITHUB_ENV"
-          echo "shouldRun=true" >> "$GITHUB_OUTPUT"
 
       - name: Draft release
-        if: ${{ steps.shouldrun.outputs.shouldRun == 'true' }}
+        if: ${{ env.SHOULD_RUN == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
