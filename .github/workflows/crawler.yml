@@ -62,6 +62,7 @@ jobs:
         run: |
           sed -i 's|#{rid}|${{ matrix.rid }}|' ./Server.csproj
           sed -i 's|#{roslynVersion}|${{ needs.checkIfRequired.outputs.version }}|' ./Server.csproj
+          cat "./Server.csproj"
 
       - name: Download and zip the Release
         run: |
