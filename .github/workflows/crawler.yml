@@ -1,0 +1,75 @@
+name: Crawl new Releases
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "2 2 * * *"
+
+jobs:
+  checkIfRequired:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ env.NEW_VERSION }}
+      shouldRun: ${{ env.SHOULD_RUN }}
+    steps:
+      - name: Get the latest version
+        id: version
+        run: |
+          packageId=64642ab7-8143-4252-abbc-bbe7a947ab84
+          apiUrl="https://feeds.dev.azure.com/azure-public/vside/_apis/packaging/Feeds/vs-impl/packages/$packageId?api-version=7.2-preview.1"
+
+          latestVersion=$(curl -s $apiUrl | jq -r '.versions[0].version')
+
+          echo "Detected version $latestVersion"
+          echo "NEW_VERSION=$latestVersion" >> "$GITHUB_ENV"
+          echo "latestVersion=$latestVersion" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether I must crawl at all
+        id: shouldrun
+        run: |
+          latestVersion=$(curl -s https://api.github.com/repos/Crashdummyy/roslynLanguageServer/releases | grep tag_name | head -1 | cut -d '"' -f4)
+          if [[ "$latestVersion" == "${{ steps.version.outputs.latestVersion }}"]];then
+              echo "We're already at the latest version. No need to download at all"
+              echo "SHOULD_RUN=false" >> "$GIHTUB_ENV"
+              exit 0
+          fi
+
+          echo "SHOULD_RUN=true" >> "$GITHUB_ENV"
+          echo "shouldRun=true" >> "$GITHUB_OUTPUT"
+
+      - name: Clone the repo
+        if: ${{ steps.shouldrun.outputs.shouldRun == 'true' }}
+        uses: actions/checkout@v4
+
+      - name: Draft release
+        if: ${{ steps.shouldrun.outputs.shouldRun == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tagname="${{ steps.version.outputs.latestVersion }}"
+          gh release create "$tagname" -t "$tagname" --repo=${{ github.repository }}
+
+  downloadLanguageServers:
+    runs-on: ubuntu-latest
+    needs: [checkIfRequired]
+    if: ${{ needs.checkIfRequired.outputs.shouldRun == 'true' }}
+    strategy:
+      matrix:
+        rid: [ linux-x64, osx-arm64, linux-arm64, win-x64 ]
+
+    steps:
+      - name: Prepare the csproj
+        run: |
+          sed -i 's|#{rid}|${{ matrix.rid }}|' ./Server.csproj
+          sed -i 's|#{roslynVersion}|${{ needs.checkIfRequired.outputs.version }}|' ./Server.csproj
+
+      - name: Download and zip the Release
+        run: |
+          dotnet restore --configfile "./NuGet.config" "./Server.csproj"
+          cd "./out/microsoft.codeanalysis.languageserver.${{ matrix.rid }}/${{ needs.checkIfRequired.outputs.version }}/content/LanguageServer/${{ matrix.rid }}"
+          zip -r "../../../../../../microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" .
+
+      - name: Upload Assets To Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ needs.checkIfRequired.outputs.version }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
