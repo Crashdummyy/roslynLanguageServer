@@ -28,7 +28,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          latestVersion=$(gh release view --json name | jq .name)
+          latestVersion=$(gh release view --repo ${{ github.repository }} --json name | jq .name)
           if [[ "$latestVersion" == "${{ steps.version.outputs.latestVersion }}"]];then
               echo "We're already at the latest version. No need to download at all"
               echo "SHOULD_RUN=false" >> "$GIHTUB_ENV"
@@ -38,17 +38,13 @@ jobs:
           echo "SHOULD_RUN=true" >> "$GITHUB_ENV"
           echo "shouldRun=true" >> "$GITHUB_OUTPUT"
 
-      - name: Clone the repo
-        if: ${{ steps.shouldrun.outputs.shouldRun == 'true' }}
-        uses: actions/checkout@v4
-
       - name: Draft release
         if: ${{ steps.shouldrun.outputs.shouldRun == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tagname="${{ steps.version.outputs.latestVersion }}"
-          gh release create "$tagname" -t "$tagname" --repo=${{ github.repository }}
+          gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }}
 
   downloadLanguageServers:
     runs-on: ubuntu-latest
