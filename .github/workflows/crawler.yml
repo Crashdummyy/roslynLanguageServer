@@ -66,7 +66,8 @@ jobs:
 
       - name: Download and zip the Release
         run: |
-          dotnet restore --configfile "./NuGet.config" "./Server.csproj"
+          dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json"
+          dotnet restore "./Server.csproj"
           cd "./out/microsoft.codeanalysis.languageserver.${{ matrix.rid }}/${{ needs.checkIfRequired.outputs.version }}/content/LanguageServer/${{ matrix.rid }}"
           zip -r "../../../../../../microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" .
 
