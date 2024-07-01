@@ -55,6 +55,9 @@ jobs:
         rid: [ linux-x64, osx-arm64, linux-arm64, win-x64 ]
 
     steps:
+      - name: Clone the repo
+        uses: actions/checkout@v4
+
       - name: Prepare the csproj
         run: |
           sed -i 's|#{rid}|${{ matrix.rid }}|' ./Server.csproj
