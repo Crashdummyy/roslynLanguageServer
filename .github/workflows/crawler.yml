@@ -19,7 +19,7 @@ jobs:
 
           latestVersion=$(curl -s $apiUrl | jq -r '.versions[0].version')
 
-          echo "Detected version $latestVersion"
+          echo "Detected version ${latestVersion:1:-1}"
           echo "NEW_VERSION=$latestVersion" >> "$GITHUB_ENV"
           echo "latestVersion=$latestVersion" >> "$GITHUB_OUTPUT"
 
@@ -29,8 +29,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           latestVersion=$(gh release view --repo ${{ github.repository }} --json name | jq .name)
-          echo "Current latest: $latestVersion"
-          if [[ "$latestVersion" == "${{ steps.version.outputs.latestVersion }}" ]];then
+          latest="${latestVersion:1:-1}"
+          echo "Current latest: $latest"
+          if [[ "$latest" == "${{ steps.version.outputs.latestVersion }}" ]];then
               echo "We're already at the latest version. No need to download at all"
               echo "SHOULD_RUN=false" >> "$GIHTUB_ENV"
               exit 0
