@@ -35,7 +35,7 @@ curl -Lo "./roslyn.zip" "$asset"
 echo "Remove old installation"
 rm -rf $targetDir/*
 
-unzip "./roslyn.zip" -d "$targetDir/
+unzip "./roslyn.zip" -d "$targetDir/"
 rm "./roslyn.zip"
 ```
 
