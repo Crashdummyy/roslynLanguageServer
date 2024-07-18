@@ -19,5 +19,5 @@ jobs:
           # Delete each old release
           for release in $toDelete; do
             echo "Deleting release $release"
-            #gh release delete "$release" --repo "${{ github.repository }}" --cleanup-tag --yes
+            gh release delete "$release" --repo "${{ github.repository }}" --cleanup-tag --yes
           done
