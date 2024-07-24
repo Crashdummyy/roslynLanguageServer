@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Remove old versions
         run: |
-          keepies=$(gh release list --repo "${{ github.repository }}" --limit 5 --json tagName --jq '.[].tagName')
+          keepies=$(gh release list --repo "${{ github.repository }}" --limit 15 --json tagName --jq '.[].tagName')
           allOfThem=$(gh release list --repo "${{ github.repository }}" --json tagName --jq '.[].tagName')
           toDelete=$(comm -23 <(echo "$allOfThem" | sort) <(echo "$keepies" | sort))
 
