@@ -1,6 +1,6 @@
 # RoslynCrawler
 
-This repository will crawl the Roslyn Feeds https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.{rid} for new releases and upload the as artifacts
+This repository will crawl the Roslyn Feeds <https://dev.azure.com/azure-public/vside/_artifacts/feed/vs-impl/NuGet/Microsoft.CodeAnalysis.LanguageServer.{rid}> for new releases and upload the as artifacts
 
 ## AutoUpdate for nvim
 
@@ -8,7 +8,9 @@ Theres an attempt to get integrated into the [mason-registry](https://github.com
 Until this is done you can use this script to automatically update to the latest version:
 
 ### Linux
+
 The variable `rid` might need to be altered
+
 ```bash
 #!/bin/bash
 
@@ -40,7 +42,14 @@ rm "./roslyn.zip"
 ```
 
 ### Macos
+
 TBD
 
 ### Windows
-TBD
+
+```powershell
+$file = New-Guid
+Invoke-WebRequest https://github.com/Crashdummyy/roslynLanguageServer/releases/latest/download/microsoft.codeanalysis.languageserver.win-x64.zip -OutFile ~/Downloads/$file.zip
+Expand-Archive ~/Downloads/$file.zip -DestinationPath ~/AppData/Local/nvim-data/roslyn/ -Force
+rm ~/Downloads/$file.zip
+```
