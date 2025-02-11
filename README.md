@@ -5,7 +5,34 @@ This repository will crawl the Roslyn Feeds <https://dev.azure.com/azure-public/
 ## AutoUpdate for nvim
 
 Theres an attempt to get integrated into the [mason-registry](https://github.com/mason-org/mason-registry/pull/6330).
-Until this is done you can use this script to automatically update to the latest version:
+Until this is done you can use one of these approaaches to automatically update to the latest version:
+
+### custom-mason-registry
+
+In case you're already using [mason](https://github.com/williamboman/mason.nvim) you can add a custom registry.  
+
+```lua
+  {
+    "williamboman/mason.nvim",
+    cmd = {
+      "Mason",
+      "MasonInstall",
+      "MasonUninstall",
+      "MasonUninstallAll",
+      "MasonLog",
+      "MasonUpdate",
+    },
+    opts = {
+      registries = {
+        "github:mason-org/mason-registry",
+        "github:crashdummyy/mason-registry"
+      }
+    }
+  },
+
+```
+
+This registry currently serves at least the languageServer for [roslyn.nvim](https://github.com/seblj/roslyn.nvim) and [rzls.nvim](https://github.com/tris203/rzls.nvim)
 
 ### Linux
 
