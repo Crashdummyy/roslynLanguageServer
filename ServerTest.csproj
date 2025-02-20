@@ -6,6 +6,6 @@
         <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
     </PropertyGroup>
     <ItemGroup>
-        <PackageDownload Include="Microsoft.CodeAnalysis.LanguageServer.linux-arm64" version="[4.12.0-1.24351.3]" />
+        <PackageDownload Include="Microsoft.CodeAnalysis.LanguageServer.linux-arm64" version="[5.0.0-1.25119.1]" />
     </ItemGroup>
 </Project>

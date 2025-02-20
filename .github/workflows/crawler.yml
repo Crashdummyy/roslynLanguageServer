@@ -66,6 +66,7 @@ jobs:
           cat "./Server.csproj"
 
       - name: Download and zip the Release
+        continue-on-error: true
         run: |
           dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json"
           dotnet restore "./Server.csproj"
@@ -73,7 +74,9 @@ jobs:
           zip -r "../../../../../../microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" .
 
       - name: Upload Assets To Release
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          [[ -f "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" ]] || (echo "Target missing, no upload" && exit 0)
           gh release upload "${{ needs.checkIfRequired.outputs.version }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
