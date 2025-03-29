@@ -8,44 +8,102 @@ jobs:
   checkIfRequired:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ env.NEW_VERSION }}
-      shouldRun: ${{ env.SHOULD_RUN }}
+      version: ${{ steps.version.outputs.latest }}
+      versionv4: ${{ steps.version.outputs.latestv4 }}
+      shouldRun: ${{ steps.shouldrun.outputs.run }}
+      shouldRunv4: ${{ steps.shouldrun.outputs.runv4 }}
     steps:
       - name: Get the latest version
         id: version
         run: |
           packageId=64642ab7-8143-4252-abbc-bbe7a947ab84
-          apiUrl="https://feeds.dev.azure.com/azure-public/vside/_apis/packaging/Feeds/vs-impl/packages/$packageId?api-version=7.2-preview.1"
+          apiUrl="https://feeds.dev.azure.com/azure-public/vside/_apis/packaging/Feeds/vs-impl/packages/$packageId/versions?api-version=7.2-preview.1"
 
-          latestVersion=$(curl -s $apiUrl | jq -r '.versions[0].version')
+          versions=$(curl -s $apiUrl | jq -r '.value[].version')
 
-          echo "Detected version ${latestVersion:1:-1}"
-          echo "NEW_VERSION=$latestVersion" >> "$GITHUB_ENV"
-          echo "latestVersion=$latestVersion" >> "$GITHUB_OUTPUT"
+          latest=$(echo "$versions" | sort -V | tail -n 1)
+          latestv4=$(echo "$versions" | grep '^4\.' | sort -V | tail -n 1)
+
+          echo "Latest version: $latest"
+          echo "Latest 4.X.X version: $latestv4"
+
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "latestv4=$latestv4" >> "$GITHUB_OUTPUT"
 
       - name: Check whether I must crawl at all
         id: shouldrun
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          latestVersion=$(gh release view --repo ${{ github.repository }} --json name | jq .name)
-          latest="${latestVersion:1:-1}"
-          echo "Current latest: $latest"
-          if [[ "$latest" == "${{ steps.version.outputs.latestVersion }}" ]];then
-              echo "We're already at the latest version. No need to download at all"
-              echo "SHOULD_RUN=false" >> "$GITHUB_ENV"
-              exit 0
+          latest=$(gh release view -R ${{ github.repository }} ${{ steps.version.outputs.latest  }} --json name | jq .name 2> /dev/null)
+          latestv4=$(gh release view -R ${{ github.repository }} ${{ steps.version.outputs.latestv4  }} --json name | jq .name 2> /dev/null)
+
+          if [[ -z "$latest" ]]; then
+              echo "${{ steps.version.outputs.latest }} doesn't exist and will be created"
+              echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+              echo "$latest already exists"
+              echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "SHOULD_RUN=true" >> "$GITHUB_ENV"
+          if [[ -z "$latestv4" ]]; then
+              echo "${{ steps.version.outputs.latestv4 }} doesn't exist and will be created"
+              echo "runv4=true" >> "$GITHUB_OUTPUT"
+          else
+              echo "$latestv4 already exists"
+              echo "runv4=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Draft release
-        if: ${{ env.SHOULD_RUN == 'true' }}
+      - name: Draft release (v4)
+        if: ${{ steps.shouldrun.outputs.runv4 == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tagname="${{ steps.version.outputs.latestVersion }}"
+          tagname="${{ steps.version.outputs.versionv4 }}"
           gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }}
+
+
+      - name: Draft release
+        if: ${{ steps.shouldrun.outputs.run == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tagname="${{ steps.version.outputs.version }}"
+          gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }} --latest
+
+  downloadLanguageServersv4:
+    runs-on: ubuntu-latest
+    needs: [checkIfRequired]
+    if: ${{ needs.checkIfRequired.outputs.shouldRunv4 == 'true' }}
+    strategy:
+      matrix:
+        rid: [ linux-x64, linux-arm64, win-x64, win-arm64, osx-x64, osx-arm64 ]
+
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v4
+
+      - name: Prepare the csproj
+        run: |
+          sed -i 's|#{rid}|${{ matrix.rid }}|' ./Server.csproj
+          sed -i 's|#{roslynVersion}|${{ needs.checkIfRequired.outputs.versionv4 }}|' ./Server.csproj
+          cat "./Server.csproj"
+
+      - name: Download and zip the Release
+        continue-on-error: true
+        run: |
+          dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json"
+          dotnet restore "./Server.csproj"
+          cd "./out/microsoft.codeanalysis.languageserver.${{ matrix.rid }}/${{ needs.checkIfRequired.outputs.version }}/content/LanguageServer/${{ matrix.rid }}"
+          zip -r "../../../../../../microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" .
+
+      - name: Upload Assets To Release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ -f "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" ]] || (echo "Target missing, no upload" && exit 0)
+          gh release upload "${{ needs.checkIfRequired.outputs.versionv4 }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
 
   downloadLanguageServers:
     runs-on: ubuntu-latest
