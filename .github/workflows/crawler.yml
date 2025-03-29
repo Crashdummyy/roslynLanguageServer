@@ -60,7 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tagname="${{ steps.version.outputs.latestv4 }}"
-          gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }}
+          gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }} --latest=false
 
 
       - name: Draft release
@@ -94,7 +94,7 @@ jobs:
         run: |
           dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json"
           dotnet restore "./Server.csproj"
-          cd "./out/microsoft.codeanalysis.languageserver.${{ matrix.rid }}/${{ needs.checkIfRequired.outputs.version }}/content/LanguageServer/${{ matrix.rid }}"
+          cd "./out/microsoft.codeanalysis.languageserver.${{ matrix.rid }}/${{ needs.checkIfRequired.outputs.versionv4 }}/content/LanguageServer/${{ matrix.rid }}"
           zip -r "../../../../../../microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" .
 
       - name: Upload Assets To Release
