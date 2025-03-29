@@ -64,7 +64,7 @@ jobs:
           gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }} --latest=false
 
           # Thank you github for literally ignoring the latest... -.-
-          gh release edit "${actuallatest:1:-1}" --latest
+          gh release edit -R ${{ github.repository }} "${actuallatest:1:-1}" --latest
 
 
       - name: Draft release
