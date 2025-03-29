@@ -59,7 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tagname="${{ steps.version.outputs.versionv4 }}"
+          tagname="${{ steps.version.outputs.latestv4 }}"
           gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }}
 
 
@@ -68,7 +68,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tagname="${{ steps.version.outputs.version }}"
+          tagname="${{ steps.version.outputs.latest }}"
           gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }} --latest
 
   downloadLanguageServersv4:
