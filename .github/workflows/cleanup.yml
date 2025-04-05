@@ -12,15 +12,22 @@ jobs:
     steps:
       - name: Remove old versions
         run: |
-
           toDelete=$(gh  release list -R ${{ github.repository }} --json tagName --jq '.[].tagName' | grep -v '^4\.' | tail -n+11)
           toDeletev4=$(gh  release list -R ${{ github.repository }} --json tagName --jq '.[].tagName' | grep '^4\.' | tail -n+11)
 
           for release in $toDelete; do
-              echo "Deleting release $release"
-              gh release delete "$release" --repo "${{ github.repository }}" --cleanup-tag --yes
+              if [[ "${{ vars.frozenReleases }}" = *"$release"* ]];then
+                echo "Release $release is locked for retention"
+              else
+                echo "Deleting release $release"
+                gh release delete "$release" --repo "${{ github.repository }}" --cleanup-tag --yes
+              fi
           done
           for release in $toDeletev4; do
-              echo "Deleting release $release"
-              gh release delete "$release" --repo "${{ github.repository }}" --cleanup-tag --yes
+              if [[ "${{ vars.frozenReleases }}" = *"$release"* ]];then
+                echo "Release $release is locked for retention"
+              else
+                echo "Deleting release $release"
+                gh release delete "$release" --repo "${{ github.repository }}" --cleanup-tag --yes
+              fi
           done
