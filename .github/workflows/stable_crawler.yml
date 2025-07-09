@@ -1,0 +1,36 @@
+name: Crawl roslyn-stable
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "2 2 * * *"
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get vscode-csharp releases
+        id: vscode
+        run: |
+          versionlist=$(curl https://raw.githubusercontent.com/dotnet/vscode-csharp/refs/heads/main/package.json | jq '.["defaults"]')
+
+          echo "roslyn=$(echo $versionlist | jq '.["roslyn"]' | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
+
+
+      - name: Clone the repo
+        uses: actions/checkout@v4
+
+      - name: Crawl stable if missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          roslynversion="${{ steps.vscode.outputs.roslyn }}"
+          if gh release view "$roslynversion";then
+            echo "Release already exists"
+            exit 0
+          fi
+
+          echo "Crawling new roslynstable for $roslynversion"
+
+          make version="$roslynversion" all
+
+          gh release create "$roslynversion" -t "$roslynversion" --title="$roslynversion" --notes="Rosyln Release $roslynversion" *.zip
