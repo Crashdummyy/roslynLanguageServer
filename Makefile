@@ -36,7 +36,7 @@ target:
 	sed -i 's|#{rid}|${PLATFORM}|' ./Server.csproj
 	git diff ./Server.csproj
 	@echo "Ensure vs-impl feed is set"
-	dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json" 2&> /dev/null || true
+	dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json" || true
 	dotnet restore "./Server.csproj"
 	cd ./out/microsoft.codeanalysis.languageserver.${PLATFORM}/${version}/content/LanguageServer/${PLATFORM} && zip -r "../../../../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .
 	git checkout ./Server.csproj
