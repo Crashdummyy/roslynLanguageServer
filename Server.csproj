@@ -6,6 +6,7 @@
         <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
     </PropertyGroup>
     <ItemGroup>
-        <PackageDownload Include="Microsoft.CodeAnalysis.LanguageServer.#{rid}" version="[#{roslynVersion}]" />
+      <PackageDownload Include="Microsoft.CodeAnalysis.LanguageServer.#{rid}" version="[#{roslynVersion}]" />
+      <PackageDownload Include="Microsoft.VisualStudioCode.RazorExtension" version="[#{rzlsVersion}]" />
     </ItemGroup>
 </Project>

@@ -8,106 +8,87 @@ jobs:
   checkIfRequired:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.latest }}
-      versionv4: ${{ steps.version.outputs.latestv4 }}
+      roslyn: ${{ steps.latest.outputs.roslyn }}
+      razor: ${{ steps.latest.outputs.razor }}
       shouldRun: ${{ steps.shouldrun.outputs.run }}
-      shouldRunv4: ${{ steps.shouldrun.outputs.runv4 }}
+      roslynstable: ${{ steps.stable.outputs.roslyn }}
+      razorstable: ${{ steps.stable.outputs.razor }}
+      shouldRunStable: ${{ steps.shouldrun.outputs.runstable }}
     steps:
       - name: Get the latest version
-        id: version
+        id: latest
         run: |
+          echo "--- Check for the latest roslyn version --"
           packageId=64642ab7-8143-4252-abbc-bbe7a947ab84
           apiUrl="https://feeds.dev.azure.com/azure-public/vside/_apis/packaging/Feeds/vs-impl/packages/$packageId/versions?api-version=7.2-preview.1"
-
           versions=$(curl -s $apiUrl | jq -r '.value[].version')
 
           latest=$(echo "$versions" | sort -V | tail -n 1)
-          latestv4=$(echo "$versions" | grep '^4\.' | sort -V | tail -n 1)
 
           echo "Latest version: $latest"
-          echo "Latest 4.X.X version: $latestv4"
+          echo "roslyn=$latest" >> "$GITHUB_OUTPUT"
 
-          echo "latest=$latest" >> "$GITHUB_OUTPUT"
-          echo "latestv4=$latestv4" >> "$GITHUB_OUTPUT"
+          echo "--- Check for the latest razor version --"
+          packageId=230cca0c-005d-4eea-8749-939a0ae21f5b
+          apiUrl="https://feeds.dev.azure.com/azure-public/vside/_apis/packaging/Feeds/msft_consumption/packages/$packageId/versions?api-version=7.2-preview.1"
+          versions=$(curl -s $apiUrl | jq -r '.value[].version')
+
+          latest=$(echo "$versions" | sort -V | tail -n 1)
+
+          echo "Latest version: $latest"
+          echo "razor=$latest" >> "$GITHUB_OUTPUT"
+
+      - name: Get vscode-csharp releases (stable)
+        id: stable
+        run: |
+          versionlist=$(curl https://raw.githubusercontent.com/dotnet/vscode-csharp/refs/heads/main/package.json | jq '.["defaults"]')
+          echo "roslyn=$(echo $versionlist | jq '.["roslyn"]' | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
+          echo "razor=$(echo $versionlist | jq '.["razor"]' | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
+
 
       - name: Check whether I must crawl at all
         id: shouldrun
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          latest=$(gh release view -R ${{ github.repository }} ${{ steps.version.outputs.latest  }} --json name | jq .name 2> /dev/null)
-          latestv4=$(gh release view -R ${{ github.repository }} ${{ steps.version.outputs.latestv4  }} --json name | jq .name 2> /dev/null)
+          latest=$(gh release view -R ${{ github.repository }} ${{ steps.latest.outputs.roslyn  }} --json name | jq .name 2> /dev/null)
+          stable=$(gh release view -R ${{ github.repository }} ${{ steps.stable.outputs.roslyn  }} --json name | jq .name 2> /dev/null)
 
           if [[ -z "$latest" ]]; then
-              echo "${{ steps.version.outputs.latest }} doesn't exist and will be created"
+              echo "${{ steps.latest.outputs.roslyn }} doesn't exist and will be created"
               echo "run=true" >> "$GITHUB_OUTPUT"
           else
               echo "$latest already exists"
               echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if [[ -z "$latestv4" ]]; then
-              echo "${{ steps.version.outputs.latestv4 }} doesn't exist and will be created"
-              echo "runv4=true" >> "$GITHUB_OUTPUT"
+          if [[ -z "$stable" ]]; then
+              echo "${{ steps.stable.outputs.roslyn }} doesn't exist and will be created"
+              echo "runstable=true" >> "$GITHUB_OUTPUT"
           else
-              echo "$latestv4 already exists"
-              echo "runv4=false" >> "$GITHUB_OUTPUT"
+              echo "$stable already exists"
+              echo "runstable=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Draft release (v4)
-        if: ${{ steps.shouldrun.outputs.runv4 == 'true' }}
+      - name: Draft release (stable)
+        if: ${{ steps.shouldrun.outputs.runstable == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           actuallatest=$(gh release view --json name | jq .name)
-          tagname="${{ steps.version.outputs.latestv4 }}"
+          tagname="${{ steps.stable.outputs.roslyn }}"
           gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }} --latest=false
 
           # Thank you github for literally ignoring the latest... -.-
           gh release edit -R ${{ github.repository }} "${actuallatest:1:-1}" --latest
-
 
       - name: Draft release
         if: ${{ steps.shouldrun.outputs.run == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tagname="${{ steps.version.outputs.latest }}"
+          tagname="${{ steps.latest.outputs.roslyn }}"
           gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }} --latest
-
-  downloadLanguageServersv4:
-    runs-on: ubuntu-latest
-    needs: [checkIfRequired]
-    if: ${{ needs.checkIfRequired.outputs.shouldRunv4 == 'true' }}
-    strategy:
-      matrix:
-        rid: [ linux-x64, linux-arm64, win-x64, win-arm64, osx-x64, osx-arm64 ]
-
-    steps:
-      - name: Clone the repo
-        uses: actions/checkout@v4
-
-      - name: Prepare the csproj
-        run: |
-          sed -i 's|#{rid}|${{ matrix.rid }}|' ./Server.csproj
-          sed -i 's|#{roslynVersion}|${{ needs.checkIfRequired.outputs.versionv4 }}|' ./Server.csproj
-          cat "./Server.csproj"
-
-      - name: Download and zip the Release
-        continue-on-error: true
-        run: |
-          dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json"
-          dotnet restore "./Server.csproj"
-          cd "./out/microsoft.codeanalysis.languageserver.${{ matrix.rid }}/${{ needs.checkIfRequired.outputs.versionv4 }}/content/LanguageServer/${{ matrix.rid }}"
-          zip -r "../../../../../../microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" .
-
-      - name: Upload Assets To Release
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          [[ -f "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" ]] || (echo "Target missing, no upload" && exit 0)
-          gh release upload "${{ needs.checkIfRequired.outputs.versionv4 }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
 
   downloadLanguageServers:
     runs-on: ubuntu-latest
@@ -121,19 +102,9 @@ jobs:
       - name: Clone the repo
         uses: actions/checkout@v4
 
-      - name: Prepare the csproj
+      - name: Download assets
         run: |
-          sed -i 's|#{rid}|${{ matrix.rid }}|' ./Server.csproj
-          sed -i 's|#{roslynVersion}|${{ needs.checkIfRequired.outputs.version }}|' ./Server.csproj
-          cat "./Server.csproj"
-
-      - name: Download and zip the Release
-        continue-on-error: true
-        run: |
-          dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json"
-          dotnet restore "./Server.csproj"
-          cd "./out/microsoft.codeanalysis.languageserver.${{ matrix.rid }}/${{ needs.checkIfRequired.outputs.version }}/content/LanguageServer/${{ matrix.rid }}"
-          zip -r "../../../../../../microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" .
+          make version=${{ needs.checkIfRequired.outputs.roslyn }} rzlsversion=${{ needs.checkIfRequired.outputs.razor }} ${{ matrix.rid }}
 
       - name: Upload Assets To Release
         continue-on-error: true
@@ -141,4 +112,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           [[ -f "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" ]] || (echo "Target missing, no upload" && exit 0)
-          gh release upload "${{ needs.checkIfRequired.outputs.version }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
+          gh release upload "${{ needs.checkIfRequired.outputs.roslyn }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
+
+  downloadLanguageServersStable:
+    runs-on: ubuntu-latest
+    needs: [checkIfRequired]
+    if: ${{ needs.checkIfRequired.outputs.shouldRunStable == 'true' }}
+    strategy:
+      matrix:
+        rid: [ linux-x64, linux-arm64, win-x64, win-arm64, osx-x64, osx-arm64 ]
+
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v4
+
+      - name: Download assets
+        run: |
+          make version=${{ needs.checkIfRequired.outputs.roslynstable }} rzlsversion=${{ needs.checkIfRequired.outputs.razorstable }} ${{ matrix.rid }}
+
+      - name: Upload Assets To Release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ -f "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" ]] || (echo "Target missing, no upload" && exit 0)
+          gh release upload "${{ needs.checkIfRequired.outputs.roslyn }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"

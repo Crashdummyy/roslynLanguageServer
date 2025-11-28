@@ -6,6 +6,7 @@
         <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
     </PropertyGroup>
     <ItemGroup>
-        <PackageDownload Include="Microsoft.CodeAnalysis.LanguageServer.linux-arm64" version="[5.0.0-1.25119.1]" />
+        <PackageDownload Include="Microsoft.CodeAnalysis.LanguageServer.linux-x64" version="[5.3.0-2.25576.3]" />
+        <PackageDownload Include="Microsoft.VisualStudioCode.RazorExtension" version="[10.0.0-preview.25573.2]" />
     </ItemGroup>
 </Project>
