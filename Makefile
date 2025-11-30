@@ -40,8 +40,10 @@ target:
 	@echo "Ensure vs-impl feed is set"
 	dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json" || true
 	dotnet nuget add source -n rzls "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/nuget/v3/index.json" || true
-	dotnet restore "./Server.csproj"
+	@while ! dotnet restore "./Server.csproj"; do \
+			echo "retrying..."; \
+	done
 	cd ./out/microsoft.codeanalysis.languageserver.${PLATFORM}/${version}/content/LanguageServer/${PLATFORM} && zip -r "../../../../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .
-	cd ./out/microsoft.visualstudiocode.razorextension/${rzlsversion} && mv "./content" "./RazorExtension" && zip -r "../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" RazorExtension
+	cd ./out/microsoft.visualstudiocode.razorextension/${rzlsversion} && mv "./content" "./.razorExtension" && zip -r "../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .razorExtension
 	git checkout ./Server.csproj
 	rm -rf obj out
