@@ -136,4 +136,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           [[ -f "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip" ]] || (echo "Target missing, no upload" && exit 0)
-          gh release upload "${{ needs.checkIfRequired.outputs.roslyn }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
+          gh release upload "${{ needs.checkIfRequired.outputs.roslynstable }}" "./microsoft.codeanalysis.languageserver.${{ matrix.rid }}.zip"
