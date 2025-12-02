@@ -75,12 +75,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          actuallatest=$(gh release view --json name | jq .name)
+          actuallatest=$(gh release view --repo=${{ github.repository }} --json name | jq .name)
           tagname="${{ steps.stable.outputs.roslyn }}"
           gh release create "$tagname" -t "$tagname" --title="$tagname" --notes="Rosyln Release $tagname" --repo=${{ github.repository }} --latest=false
 
           # Thank you github for literally ignoring the latest... -.-
-          gh release edit -R ${{ github.repository }} "${actuallatest:1:-1}" --latest
+          gh release edit -R ${{ github.repository }} "${actuallatest:1:-1}" --latest || true
 
       - name: Draft release
         if: ${{ steps.shouldrun.outputs.run == 'true' }}
