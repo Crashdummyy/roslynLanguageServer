@@ -15,6 +15,13 @@ jobs:
       razorstable: ${{ steps.stable.outputs.razor }}
       shouldRunStable: ${{ steps.shouldrun.outputs.runstable }}
     steps:
+      - name: Get vscode-csharp releases (stable)
+        id: stable
+        run: |
+          versionlist=$(curl https://raw.githubusercontent.com/dotnet/vscode-csharp/refs/heads/main/package.json | jq '.["defaults"]')
+          echo "roslyn=$(echo $versionlist | jq '.["roslyn"]' | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
+          echo "razor=$(echo $versionlist | jq '.["razor"]' | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
+
       - name: Get the latest version
         id: latest
         run: |
@@ -22,6 +29,9 @@ jobs:
           packageId=64642ab7-8143-4252-abbc-bbe7a947ab84
           apiUrl="https://feeds.dev.azure.com/azure-public/vside/_apis/packaging/Feeds/vs-impl/packages/$packageId/versions?api-version=7.2-preview.1"
           versions=$(curl -s $apiUrl | jq -r '.value[].version')
+
+          # It already happened three times that vscode referenced versions which are not inside the feed
+          [[ "$versions" =~ "${{ steps.stable.outputs.roslyn }}" ]] || echo "stable_borked=true" >> "$GITHUB_OUTPUT"
 
           latest=$(echo "$versions" | sort -V | tail -n 1)
 
@@ -37,14 +47,6 @@ jobs:
 
           echo "Latest version: $latest"
           echo "razor=$latest" >> "$GITHUB_OUTPUT"
-
-      - name: Get vscode-csharp releases (stable)
-        id: stable
-        run: |
-          versionlist=$(curl https://raw.githubusercontent.com/dotnet/vscode-csharp/refs/heads/main/package.json | jq '.["defaults"]')
-          echo "roslyn=$(echo $versionlist | jq '.["roslyn"]' | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
-          echo "razor=$(echo $versionlist | jq '.["razor"]' | cut -d '"' -f2)" >> "$GITHUB_OUTPUT"
-
 
       - name: Check whether I must crawl at all
         id: shouldrun
@@ -63,11 +65,16 @@ jobs:
           fi
 
           if [[ -z "$stable" ]]; then
-              echo "${{ steps.stable.outputs.roslyn }} doesn't exist and will be created"
+              echo "${{ steps.stable.outputs.roslyn }} doesnt exist and will be created"
               echo "runstable=true" >> "$GITHUB_OUTPUT"
           else
               echo "$stable already exists"
               echo "runstable=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ "${{ steps.latest.outputs.stable_borked }}" == "true" ]];then
+            echo "It looks like the stable version of roslyn ( ${{ steps.stable.outputs.roslyn }} ) is missing in the nuget feed. Bailing out, sorry."
+            echo "runstable=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Draft release (stable)
