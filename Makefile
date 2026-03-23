@@ -1,5 +1,5 @@
-version ?= 5.3.0-2.25576.3
-rzlsversion ?= 10.0.0-preview.25573.2
+version ?= 5.6.0-2.26173.1
+rzlsversion ?= 10.0.0-preview.26171.1
 
 # Default platform to empty (will be set based on target)
 platform =
@@ -43,7 +43,7 @@ target:
 	@while ! dotnet restore "./Server.csproj"; do \
 			echo "retrying..."; \
 	done
-	cd ./out/microsoft.codeanalysis.languageserver.${PLATFORM}/${version}/content/LanguageServer/${PLATFORM} && zip -r "../../../../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .
+	cd ./out/roslyn-language-server.${PLATFORM}/${version}/tools/net10.0/${PLATFORM} && zip -r "../../../../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .
 	cd ./out/microsoft.visualstudiocode.razorextension/${rzlsversion} && mv "./content" "./.razorExtension" && zip -r "../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .razorExtension
 	git checkout ./Server.csproj
 	rm -rf obj out

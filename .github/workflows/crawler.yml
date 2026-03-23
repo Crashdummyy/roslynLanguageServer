@@ -26,7 +26,7 @@ jobs:
         id: latest
         run: |
           echo "--- Check for the latest roslyn version --"
-          packageId=64642ab7-8143-4252-abbc-bbe7a947ab84
+          packageId=9078f0b1-e4ad-4cae-8538-7d137417390f
           apiUrl="https://feeds.dev.azure.com/azure-public/vside/_apis/packaging/Feeds/vs-impl/packages/$packageId/versions?api-version=7.2-preview.1"
           versions=$(curl -s $apiUrl | jq -r '.value[].version')
 
@@ -107,7 +107,7 @@ jobs:
 
     steps:
       - name: Clone the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download assets
         run: |
@@ -131,7 +131,7 @@ jobs:
 
     steps:
       - name: Clone the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download assets
         run: |

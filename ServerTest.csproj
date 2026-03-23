@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.Build.NoTargets/1.0.80">
     <PropertyGroup>
         <RestorePackagesPath>out</RestorePackagesPath>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
         <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
     </PropertyGroup>
     <ItemGroup>
-        <PackageDownload Include="Microsoft.CodeAnalysis.LanguageServer.linux-x64" version="[5.3.0-2.25579.2]" />
-        <PackageDownload Include="Microsoft.VisualStudioCode.RazorExtension" version="[10.0.0-preview.25573.2]" />
+        <PackageDownload Include="roslyn-language-server.linux-x64" version="[5.6.0-2.26173.1]" />
+        <PackageDownload Include="Microsoft.VisualStudioCode.RazorExtension" version="[10.0.0-preview.26171.1]" />
     </ItemGroup>
 </Project>
