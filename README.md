@@ -70,7 +70,19 @@ rm "./roslyn.zip"
 
 ### Macos
 
-TBD
+`unzip` is pre-installed on MacOS, so no need for checks
+
+```bash
+#!/bin/bash
+
+dir="$HOME/.local/share/nvim/roslyn"
+link="https://github.com/Crashdummyy/roslynLanguageServer/releases/latest/download/microsoft.codeanalysis.languageserver.osx-$([[ $(arch) == arm64 ]] && echo arm64 || echo x64).zip"
+
+rm -rf $dir
+curl -Lo "roslyn.zip" "$link"
+unzip "./roslyn.zip" -d "$dir"
+rm "./roslyn.zip"
+```
 
 ### Windows
 
