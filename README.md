@@ -70,21 +70,17 @@ rm "./roslyn.zip"
 
 ### Macos
 
+`unzip` is pre-installed on MacOS, so no need for checks
+
 ```bash
 #!/bin/bash
 
-targetDir="$HOME/.local/share/nvim/roslyn"
-link="https://github.com/Crashdummyy/roslynLanguageServer/releases/latest/download/microsoft.codeanalysis.languageserver.osx-"
+dir="$HOME/.local/share/nvim/roslyn"
+link="https://github.com/Crashdummyy/roslynLanguageServer/releases/latest/download/microsoft.codeanalysis.languageserver.osx-$([[ $(arch) == arm64 ]] && echo arm64 || echo x64).zip"
 
-if [[ "$(arch)" == "arm64" ]]; then
-  link+="arm64.zip"
-else
-  link+="-x64.zip"
-fi
-
-rm -rf $targetDir
+rm -rf $dir
 curl -Lo "roslyn.zip" "$link"
-unzip "./roslyn.zip" -d "$targetDir"
+unzip "./roslyn.zip" -d "$dir"
 rm "./roslyn.zip"
 ```
 
