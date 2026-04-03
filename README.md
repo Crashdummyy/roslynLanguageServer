@@ -73,46 +73,20 @@ rm "./roslyn.zip"
 ```bash
 #!/bin/bash
 
-if ! command -v unzip &>/dev/null; then
-  echo "unzip is required. Please install it"
-  exit 1
-fi
+targetDir="$HOME/.local/share/nvim/roslyn"
+link="https://github.com/Crashdummyy/roslynLanguageServer/releases/latest/download/microsoft.codeanalysis.languageserver.osx-"
 
 if [[ "$(arch)" == "arm64" ]]; then
-  rid="osx-arm64"
+  link+="arm64.zip"
 else
-  rid="osx-x64"
+  link+="-x64.zip"
 fi
 
-targetDir="$HOME/.local/share/nvim/roslyn"
-latestVersion=$(curl -s https://api.github.com/repos/Crashdummyy/roslynLanguageServer/releases | grep tag_name | head -1 | cut -d '"' -f4)
-
-[[ -z "$latestVersion" ]] && echo "Failed to fetch the latest package information." && exit 1
-
-echo "Latest version: $latestVersion"
-
-asset=$(curl -s https://api.github.com/repos/Crashdummyy/roslynLanguageServer/releases | grep "releases/download/$latestVersion" | grep "$rid" | cut -d '"' -f 4)
-
-echo "Downloading: $asset"
-
-curl -Lo "./roslyn.zip" "$asset"
-
-echo "Remove old installation"
 rm -rf $targetDir
-
+curl -Lo "roslyn.zip" "$link"
 unzip "./roslyn.zip" -d "$targetDir"
 rm "./roslyn.zip"
-
-if [[ ":$PATH:" != *":$targetDir:"* ]]; then
-  echo "$targetDir is not in PATH. Adding to PATH"
-  echo "export PATH=\"\$PATH:$targetDir\"" >>"$HOME/.bash_profile"
-  export PATH="$PATH:$targetDir"
-else
-  echo "$targetDir is already in PATH"
-fi
 ```
-
-For Roslyn to function properly on macOS, you must ensure that the binaries directory is included in your `PATH`.
 
 ### Windows
 
