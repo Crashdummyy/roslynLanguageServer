@@ -1,5 +1,4 @@
 version ?= 5.6.0-2.26173.1
-rzlsversion ?= 10.0.0-preview.26171.1
 
 # Default platform to empty (will be set based on target)
 platform =
@@ -39,11 +38,9 @@ target:
 	git diff ./Server.csproj
 	@echo "Ensure vs-impl feed is set"
 	dotnet nuget add source -n roslyn "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json" || true
-	dotnet nuget add source -n rzls "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/nuget/v3/index.json" || true
 	@while ! dotnet restore "./Server.csproj"; do \
 			echo "retrying..."; \
 	done
 	cd ./out/roslyn-language-server.${PLATFORM}/${version}/tools/net10.0/${PLATFORM} && zip -r "../../../../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .
-	cd ./out/microsoft.visualstudiocode.razorextension/${rzlsversion} && mv "./content" "./.razorExtension" && zip -r "../../../microsoft.codeanalysis.languageserver.${PLATFORM}.zip" .razorExtension
 	git checkout ./Server.csproj
 	rm -rf obj out

@@ -7,6 +7,5 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageDownload Include="roslyn-language-server.linux-x64" version="[5.6.0-2.26173.1]" />
-        <PackageDownload Include="Microsoft.VisualStudioCode.RazorExtension" version="[10.0.0-preview.26171.1]" />
     </ItemGroup>
 </Project>
